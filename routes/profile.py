@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
+
+from services.profiler import profile_user
 
 profile_bp = Blueprint("profile", __name__)
 
@@ -9,17 +11,16 @@ def profile():
 
     if not data:
         return jsonify({
-            "error": "Request body is required."
+            "error": "Need body JSON."
         }), 400
 
     username = data.get("username")
 
     if not username:
         return jsonify({
-            "error": "Username is required."
+            "error": "Username must be filled."
         }), 400
 
-    return jsonify({
-        "username": username,
-        "status": "received"
-    })
+    result = profile_user(username)
+
+    return jsonify(result)

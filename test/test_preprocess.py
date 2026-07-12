@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT))
 
-from services.preprocess import TweetPreprocessor
+from services.preprocess import preprocess_tweets
 
 
 def main():
@@ -28,11 +28,8 @@ def main():
         }
     ]
 
-    preprocessor = TweetPreprocessor()
-
-    author_document = preprocessor.preprocess(
-        username="elonmusk",
-        tweets=tweets,
+    author_document = preprocess_tweets(
+        tweets=tweets
     )
 
     print(author_document)
@@ -40,3 +37,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

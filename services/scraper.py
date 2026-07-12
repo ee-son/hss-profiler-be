@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+import glob
 
 from langdetect import detect_langs, LangDetectException
 from twscrape import API
@@ -9,7 +10,7 @@ FOREIGN_LANG_THRESHOLD = 0.70
 MIN_TWEETS = 50
 
 class TwitterScraper:
-    def __init__(self, cookies_file: str = "config/cookies.json"):
+    def __init__(self, cookies_file: str = "config/cookies*.json"):
         self.cookies_file = cookies_file
         self.api = API()
         self.initialized = False
@@ -22,6 +23,11 @@ class TwitterScraper:
         self.initialized = True
 
     async def _initialize(self):
+        cookie_files = glob.glob(self.cookies_pattern)
+
+        if not cookie_files:
+            raise Exception("No cookies files found")
+        
         with open(self.cookies_file, "r", encoding="utf-8") as f:
             cookies_list = json.load(f)
 

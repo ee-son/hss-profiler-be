@@ -62,7 +62,7 @@ class TwitterScraper:
 
         return bool(re.search(r"[A-Za-z0-9]", text))
 
-    def _should_keep_tweet(self, text: str):
+    def _should_keep_tweet(self, text: str, target_lang: str):
         if not self._has_meaningful_text(text):
             return False, "only_mentions_rt_images"
 
@@ -71,7 +71,7 @@ class TwitterScraper:
 
             for lang in langs:
                 if (
-                    lang.lang != "en"
+                    lang.lang != target_lang
                     and lang.prob >= FOREIGN_LANG_THRESHOLD
                 ):
                     return False, ", ".join(str(x) for x in langs)
@@ -81,7 +81,7 @@ class TwitterScraper:
         except LangDetectException:
             return False, "undetected"
 
-    async def scrape_user(self, username: str, max_tweets: int = 100):
+    async def scrape_user(self, username: str, language: str, max_tweets: int = 100):
         query = f"from:{username}"
         tweets_data = []
 
@@ -102,7 +102,7 @@ class TwitterScraper:
             if not text:
                 continue
 
-            keep, detected_lang = self._should_keep_tweet(text)
+            keep, detected_lang = self._should_keep_tweet(text, language)
 
             if not keep:
                 continue

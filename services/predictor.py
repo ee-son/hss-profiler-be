@@ -5,10 +5,15 @@ from services.preprocess import (
     custom_standardization,
 )
 
-MODEL_PATH = "models/best_general_model.keras"
+GENERAL_MODEL = tf.keras.models.load_model(
+    "models/best_general_model.keras",
+    custom_objects={
+        "custom_standardization": custom_standardization
+    }
+)
 
-model = tf.keras.models.load_model(
-    MODEL_PATH,
+ID_MODEL = tf.keras.models.load_model(
+    "models/best_general_model_id.keras",
     custom_objects={
         "custom_standardization": custom_standardization
     }
@@ -16,6 +21,11 @@ model = tf.keras.models.load_model(
 
 
 def predict_user(username: str, tweets: list, language: str = "id"):
+    if language == "id":
+        model = ID_MODEL
+    else:
+        model = GENERAL_MODEL
+        
     author_text = preprocess_tweets(
         tweets=tweets,
         language=language

@@ -4,13 +4,14 @@ from services.predictor import predict_user
 
 scraper = TwitterScraper()
 
-async def profile_user(username: str):
+async def profile_user(username: str, language: str):
 
-    tweets = await scraper.scrape_user(username)
+    tweets = await scraper.scrape_user(username=username, language=language)
 
     result = predict_user(
         username=username,
-        tweets=tweets
+        tweets=tweets,
+        language=language
     )
 
     return result

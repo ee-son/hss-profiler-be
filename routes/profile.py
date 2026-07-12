@@ -15,7 +15,7 @@ def profile():
         }), 400
 
     username = data.get("username")
-    language = data.get("lang")
+    language = data.get("language")
 
     if not username:
         return jsonify({
@@ -27,6 +27,6 @@ def profile():
             "error": "Language must be one of: id, en, es."
         }), 400
 
-    result = asyncio.run(profile_user(username))
+    result = asyncio.run(profile_user(username, language))
 
     return jsonify(result)

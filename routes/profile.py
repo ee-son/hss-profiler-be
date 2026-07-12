@@ -1,5 +1,5 @@
+import asyncio
 from flask import Blueprint, jsonify, request
-
 from services.profiler import profile_user
 
 profile_bp = Blueprint("profile", __name__)
@@ -21,6 +21,6 @@ def profile():
             "error": "Username must be filled."
         }), 400
 
-    result = profile_user(username)
+    result = asyncio.run(profile_user(username))
 
     return jsonify(result)

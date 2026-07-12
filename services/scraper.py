@@ -6,6 +6,7 @@ from langdetect import detect_langs, LangDetectException
 from twscrape import API
 
 FOREIGN_LANG_THRESHOLD = 0.70
+MIN_TWEETS = 50
 
 class TwitterScraper:
     def __init__(self, cookies_file: str = "config/cookies.json"):
@@ -119,6 +120,8 @@ class TwitterScraper:
 
             if len(tweets_data) >= max_tweets:
                 break
+        if len(tweets_data) < MIN_TWEETS:
+            return []
 
         return tweets_data
     

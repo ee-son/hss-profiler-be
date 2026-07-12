@@ -7,8 +7,10 @@ scraper = TwitterScraper()
 async def profile_user(username: str):
 
     tweets = await scraper.scrape_user(username)
-    cleaned = [preprocess_tweets(tweet["text"])
-               for tweet in tweets]
-    result = predict_user(cleaned)
+
+    result = predict_user(
+        username=username,
+        tweets=tweets
+    )
 
     return result

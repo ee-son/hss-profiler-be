@@ -10,8 +10,9 @@ FOREIGN_LANG_THRESHOLD = 0.70
 MIN_TWEETS = 50
 
 class TwitterScraper:
-    def __init__(self, cookies_file: str = "config/cookies*.json"):
-        self.cookies_file = cookies_file
+    def __init__(self, cookies_pattern: str = "config/cookies*.json"):
+        self.cookies_pattern = cookies_pattern
+        self.cookies_file = None
         self.api = API()
         self.initialized = False
 
@@ -23,42 +24,47 @@ class TwitterScraper:
         self.initialized = True
 
     async def _initialize(self):
-        cookie_files = glob.glob(self.cookies_pattern)
-
+        cookie_files = sorted(glob.glob(self.cookies_pattern))
         if not cookie_files:
             raise Exception("No cookies files found")
-        
-        with open(self.cookies_file, "r", encoding="utf-8") as f:
-            cookies_list = json.load(f)
 
-        auth_token = None
-        ct0 = None
+        for index, cookie_file in enumerate(cookie_files, start=1):
 
-        for cookie in cookies_list:
-            if cookie["name"] == "auth_token":
-                auth_token = cookie["value"]
+            print(f"[INIT] Loading {cookie_file}")
 
-            elif cookie["name"] == "ct0":
-                ct0 = cookie["value"]
+            with open(cookie_file, "r", encoding="utf-8") as f:
+                cookies_list = json.load(f)
 
-        if not auth_token or not ct0:
-            raise Exception("auth_token or ct0 is not found in cookies.json")
+            auth_token = None
+            ct0 = None
 
-        cookies_string = f"auth_token={auth_token}; ct0={ct0}"
+            for cookie in cookies_list:
+                if cookie["name"] == "auth_token":
+                    auth_token = cookie["value"]
+                elif cookie["name"] == "ct0":
+                    ct0 = cookie["value"]
 
-        try:
-            await self.api.pool.add_account(
-                username="scraper",
-                password="",
-                email="",
-                email_password="",
-                cookies=cookies_string,
-            )
-        except Exception:
-            # Biasanya akun sudah pernah ditambahkan
-            pass
+            if not auth_token or not ct0:
+                print(f"[INIT] Skip {cookie_file}: missing auth_token/ct0")
+                continue
 
-        print("✅ TwitterScraper initialized")
+            cookies_string = f"auth_token={auth_token}; ct0={ct0}"
+
+            try:
+                await self.api.pool.add_account(
+                    username=f"scraper{index}",
+                    password="",
+                    email="",
+                    email_password="",
+                    cookies=cookies_string,
+                )
+
+                print(f"[INIT] ✓ Added scraper{index}")
+
+            except Exception as e:
+                print(f"[INIT] scraper{index} already exists ({e})")
+
+        print("[INIT] TwitterScraper initialized")
 
     def _has_meaningful_text(self, text: str) -> bool:
         text = re.sub(r"@\w+", "", text)

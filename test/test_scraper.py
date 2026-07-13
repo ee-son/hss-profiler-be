@@ -8,19 +8,20 @@ import asyncio
 from services.scraper import TwitterScraper
 
 async def main():
-
     scraper = TwitterScraper()
 
     await scraper.initialize()
 
     tweets = await scraper.scrape_user(
-        username="elonmusk",
-        max_tweets=5
+        username="dukeofmalang",
+        language="id",      # <-- tambahkan
+        max_tweets=50
     )
-    
-    print(f"Total : {len(tweets)}\n")
 
-    for tweet in tweets:
+    print(f"\nTotal: {len(tweets)}\n")
+
+    for i, tweet in enumerate(tweets, start=1):
+        print(f"Tweet #{i}")
         print(tweet)
         print("-" * 80)
 

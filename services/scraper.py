@@ -97,61 +97,57 @@ class TwitterScraper:
         except LangDetectException:
             return False, "undetected"
 
-    async def scrape_user(self, username: str, language: str, max_tweets: int = 100):
+    async def scrape_user(self, username, language, max_tweets=100):
         query = f"from:{username}"
         tweets_data = []
 
+        print(f"[SCRAPE] Query: {query}")
+
         try:
             async for tweet in self.api.search(query):
+
+                if tweet.user.username.lower() != username.lower():
+                    continue
+
+                is_retweet = tweet.retweetedTweet is not None
+                is_quoted = tweet.quotedTweet is not None
+
+                if is_retweet and not is_quoted:
+                    continue
+
+                text = tweet.rawContent.strip()
+
+                if not text:
+                    continue
+
+                keep, detected_lang = self._should_keep_tweet(
+                    text,
+                    language
+                )
+
+                if not keep:
+                    continue
+
+                tweets_data.append(
+                    {
+                        "tweet_id": tweet.id,
+                        "created_at": str(tweet.date),
+                        "text": text,
+                        "url": tweet.url,
+                        "language_detected": detected_lang,
+                        "is_quoted": is_quoted,
+                    }
+                )
+
+                print(tweet.rawContent[:80])
+
                 if len(tweets_data) >= max_tweets:
                     break
-
+                
         except NoAccountError:
             retry_at = await self.api.pool.next_available_at("SearchTimeline")
-            print(
-                f'[RATE LIMIT] No account available for queue '
-                f'"SearchTimeline". Next available at {retry_at}'
-            )
             raise RateLimitError(retry_at)
 
-        if len(tweets_data) < MIN_TWEETS:
-                return []
-
-        async for tweet in self.api.search(query):
-
-            # Pastikan benar-benar tweet dari user
-            if tweet.user.username.lower() != username.lower():
-                continue
-
-            is_retweet = tweet.retweetedTweet is not None
-            is_quoted = tweet.quotedTweet is not None
-
-            if is_retweet and not is_quoted:
-                continue
-
-            text = tweet.rawContent.strip()
-
-            if not text:
-                continue
-
-            keep, detected_lang = self._should_keep_tweet(text, language)
-
-            if not keep:
-                continue
-
-            tweets_data.append(
-                {
-                    "tweet_id": tweet.id,
-                    "created_at": str(tweet.date),
-                    "text": text,
-                    "url": tweet.url,
-                    "language_detected": detected_lang,
-                    "is_quoted": is_quoted,
-                }
-            )
-
-            if len(tweets_data) >= max_tweets:
-                break
         if len(tweets_data) < MIN_TWEETS:
             return []
 

@@ -1,5 +1,6 @@
 import tensorflow as tf
 import re
+import html
 
 def preprocess_tweets(tweets, language="en"):
     documents = []
@@ -30,6 +31,9 @@ def preprocess_tweets(tweets, language="en"):
 
         # Replace newline dengan ";"
         text = re.sub(r"\r?\n+", "; ", text)
+
+        # Decode HTML entities
+        text = html.unescape(text)
 
         documents.append(
             f"<document>{text}</document>"

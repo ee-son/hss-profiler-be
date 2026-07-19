@@ -1,10 +1,14 @@
-import asyncio
+import os
 import json
 import re
 import glob
 
 from langdetect import detect_langs, LangDetectException
+from services.rate_limit import RateLimitError
+
+os.environ["TWS_RAISE_WHEN_NO_ACCOUNT"] = "1"
 from twscrape import API
+from twscrape.accounts_pool import NoAccountError
 
 FOREIGN_LANG_THRESHOLD = 0.70
 MIN_TWEETS = 50
@@ -96,6 +100,22 @@ class TwitterScraper:
     async def scrape_user(self, username: str, language: str, max_tweets: int = 100):
         query = f"from:{username}"
         tweets_data = []
+
+        try:
+            async for tweet in self.api.search(query):
+                if len(tweets_data) >= max_tweets:
+                    break
+
+        except NoAccountError:
+            retry_at = await self.api.pool.next_available_at("SearchTimeline")
+            print(
+                f'[RATE LIMIT] No account available for queue '
+                f'"SearchTimeline". Next available at {retry_at}'
+            )
+            raise RateLimitError(retry_at)
+
+        if len(tweets_data) < MIN_TWEETS:
+                return []
 
         async for tweet in self.api.search(query):
 

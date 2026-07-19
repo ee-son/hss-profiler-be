@@ -27,6 +27,19 @@ def profile():
             "error": "Language must be one of: id, en, es."
         }), 400
 
-    result = asyncio.run(profile_user(username, language))
+    try:
+        result = asyncio.run(profile_user(username, language))
 
-    return jsonify(result)
+        return jsonify(result)
+
+    except RuntimeError as e:
+        return jsonify({
+            "error": str(e)
+        }), 429
+    
+    except Exception as e:
+        print(e)
+
+        return jsonify({
+            "error": "Internal server error."
+        }), 500

@@ -45,5 +45,5 @@ def predict_user(username: str, tweets: list, language: str = "id"):
         "total_tweets": len(tweets),
         "label": label,
         "class": "hate_speech_spreader" if label else "non_hate_speech_spreader",
-        "probability": round(probability, 4)
+        "probability": probability
     }

@@ -1,24 +1,46 @@
 import tensorflow as tf
+import re
 
 def preprocess_tweets(tweets, language="en"):
     documents = []
 
     for tweet in tweets:
+
         if isinstance(tweet, dict):
             text = tweet.get("text", "")
+            is_quoted = tweet.get("is_quoted", False)
         else:
             text = str(tweet)
+            is_quoted = False
 
         text = text.strip()
 
+        # Replace hashtag
+        text = re.sub(r"#\w+", "#HASHTAG#", text)
+
+        # Replace mention
+        text = re.sub(r"@\w+", "#USER#", text)
+
+        # Replace URL
+        text = re.sub(r"https?://\S+", "#URL#", text)
+
+        # Quoted tweet
+        if is_quoted:
+            text = f'RT #USER#: "{text}"'
+
+        # Replace newline dengan ";"
+        text = re.sub(r"\r?\n+", "; ", text)
+
         documents.append(
-            f"<document><{text}</document>"
+            f"<document>{text}</document>"
         )
 
     return (
-        f'<author_lang="{language}">\n'
+        f'<author lang="{language}">\n'
+        "<documents>\n"
         + "\n".join(documents)
-        + "\n</author>"
+        + "\n</documents>\n"
+        "</author>"
     )
 
 # Prepocessing untuk di model

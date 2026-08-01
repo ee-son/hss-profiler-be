@@ -16,6 +16,7 @@ def profile():
 
     username = data.get("username")
     language = data.get("language")
+    explain = data.get("explain", False)
 
     if not username:
         return jsonify({
@@ -28,7 +29,13 @@ def profile():
         }), 400
 
     try:
-        result = asyncio.run(profile_user(username, language))
+        result = asyncio.run(
+            profile_user(
+                username,
+                language,
+                explain
+            )
+        )
 
         return jsonify(result)
 

@@ -146,6 +146,11 @@ class TwitterScraper:
                 
         except NoAccountError:
             retry_at = await self.api.pool.next_available_at("SearchTimeline")
+
+            print("=" * 50)
+            print("Retry at:", retry_at)
+            print("=" * 50)
+
             raise RateLimitError(retry_at)
 
         if len(tweets_data) < MIN_TWEETS:

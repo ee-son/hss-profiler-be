@@ -15,3 +15,4 @@ model = tf.keras.models.load_model(
 )
 
 print("SUCCESS")
+model.summary(expand_nested=True)

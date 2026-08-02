@@ -4,3 +4,4 @@ __pycache__/
 config/cookies*
 accounts.db
 .vscode/
+database/

@@ -99,15 +99,16 @@ class TwitterScraper:
             return False, "undetected"
 
     async def scrape_user(self, username, language, max_tweets=100):
-        query = f"from:{username}"
         tweets_data = []
         validation_tweets = []
         language_validated = False
 
-        print(f"[SCRAPE] Query: {query}")
+        print(f"[SCRAPE] Query: {username}")
+
+        user = await self.api.user_by_login(username)
 
         try:
-            async for tweet in self.api.search(query):
+            async for tweet in self.api.user_tweets(user.id, limit=max_tweets * 2):
 
                 if tweet.user.username.lower() != username.lower():
                     continue
@@ -189,7 +190,7 @@ class TwitterScraper:
 
                 
         except NoAccountError:
-            retry_at = await self.api.pool.next_available_at("SearchTimeline")
+            retry_at = await self.api.pool.next_available_at("UserTweets")
 
             print("=" * 50)
             print("Retry at:", retry_at)

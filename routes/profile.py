@@ -2,6 +2,8 @@ import asyncio
 from flask import Blueprint, jsonify, request
 from services.profiler import profile_user
 
+from services.lang_detector import WrongLanguageError
+
 profile_bp = Blueprint("profile", __name__)
 
 @profile_bp.route("/api/profile", methods=["POST"])
@@ -38,6 +40,11 @@ def profile():
         )
 
         return jsonify(result)
+
+    except WrongLanguageError as e:
+        return jsonify({
+            "error": str(e)
+        }), 400
 
     except RuntimeError as e:
         return jsonify({

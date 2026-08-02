@@ -5,6 +5,7 @@ import glob
 
 from langdetect import detect_langs, LangDetectException
 from services.rate_limit import RateLimitError
+from services.lang_detector import detect_dominant_language, WrongLanguageError
 
 os.environ["TWS_RAISE_WHEN_NO_ACCOUNT"] = "1"
 from twscrape import API
@@ -100,6 +101,8 @@ class TwitterScraper:
     async def scrape_user(self, username, language, max_tweets=100):
         query = f"from:{username}"
         tweets_data = []
+        validation_tweets = []
+        language_validated = False
 
         print(f"[SCRAPE] Query: {query}")
 
@@ -120,6 +123,54 @@ class TwitterScraper:
                 if not text:
                     continue
 
+                if not self._has_meaningful_text(text):
+                    continue
+
+                tweet_info = {
+                    "tweet_id": tweet.id,
+                    "created_at": str(tweet.date),
+                    "text": text,
+                    "url": tweet.url,
+                    "is_quoted": is_quoted,
+                }
+
+                if not language_validated:
+                    validation_tweets.append(tweet_info)
+
+                    if len(validation_tweets) < 30:
+                        continue
+
+                    detected_language = detect_dominant_language(
+                        validation_tweets
+                    )
+
+                    if detected_language != language:
+                        raise WrongLanguageError(detected_language)
+
+                    language_validated = True
+
+                    # Setelah lolos validasi,
+                    # proses kembali 20 tweet yang sudah dibuffer
+                    for buffered in validation_tweets:
+
+                        keep, detected_lang = self._should_keep_tweet(
+                            buffered["text"],
+                            language
+                        )
+
+                        if not keep:
+                            continue
+
+                        buffered["language_detected"] = detected_lang
+                        tweets_data.append(buffered)
+
+                    validation_tweets.clear()
+
+                    if len(tweets_data) >= max_tweets:
+                        break
+
+                    continue
+
                 keep, detected_lang = self._should_keep_tweet(
                     text,
                     language
@@ -128,21 +179,14 @@ class TwitterScraper:
                 if not keep:
                     continue
 
-                tweets_data.append(
-                    {
-                        "tweet_id": tweet.id,
-                        "created_at": str(tweet.date),
-                        "text": text,
-                        "url": tweet.url,
-                        "language_detected": detected_lang,
-                        "is_quoted": is_quoted,
-                    }
-                )
+                tweet_info["language_detected"] = detected_lang
+                tweets_data.append(tweet_info)
 
-                print(tweet.rawContent[:80])
+                print(text[:80])
 
                 if len(tweets_data) >= max_tweets:
                     break
+
                 
         except NoAccountError:
             retry_at = await self.api.pool.next_available_at("SearchTimeline")

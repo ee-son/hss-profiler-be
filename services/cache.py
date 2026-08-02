@@ -96,3 +96,20 @@ def save_profile(
 
     conn.commit()
     conn.close()
+
+def get_existing_language(username: str):
+    conn = get_connection()
+
+    row = conn.execute("""
+        SELECT language
+        FROM profile_cache
+        WHERE username = ?
+        LIMIT 1
+    """, (username,)).fetchone()
+
+    conn.close()
+
+    if row is None:
+        return None
+
+    return row["language"]

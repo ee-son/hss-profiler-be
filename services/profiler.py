@@ -2,7 +2,8 @@ import asyncio
 from services.scraper import TwitterScraper
 from services.rate_limit import RateLimitError
 from services.predictor import predict_user
-from services.cache import get_profile, save_profile
+from services.cache import get_profile, save_profile, get_existing_language
+from services.lang_detector import WrongLanguageError
 
 async def profile_user(
     username: str,
@@ -17,6 +18,11 @@ async def profile_user(
     if cached:
         print(f"[CACHE] Using cached profile: {username}")
         return cached
+
+    existing_language = get_existing_language(username)
+
+    if existing_language is not None:
+        raise WrongLanguageError(existing_language)
     
     scraper = TwitterScraper()
     await scraper.initialize()

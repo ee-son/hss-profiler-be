@@ -147,16 +147,32 @@ class TweetRanker:
             })
 
         # Urutkan berdasarkan kontribusi terbesar
-        results.sort(
+        # Pisahkan kontribusi positif dan negatif
+        positive = sorted(
+            [r for r in results if r["contribution"] >= 0],
             key=lambda x: x["contribution"],
             reverse=True
         )
+
+        negative = sorted(
+            [r for r in results if r["contribution"] < 0],
+            key=lambda x: x["contribution"]
+        )
+
+        # Ambil 3 positif + 2 negatif
+        top_results = positive[:3] + negative[:2]
+
+        # Kalau negatif kurang dari 2, isi dari positif berikutnya
+        if len(top_results) < top_k:
+            top_results.extend(
+                positive[3:3 + (top_k - len(top_results))]
+            )
 
         return {
             "baseline_confidence": round(
                 baseline_confidence,
                 4
             ),
-            "top_tweets": results[:top_k]
+            "top_tweets": top_results[:top_k]
         }
     

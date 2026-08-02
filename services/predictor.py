@@ -79,6 +79,12 @@ def predict_user(
 
     label = int(logit > 0)
 
+    confidence = (
+        probability
+        if label == 1
+        else 1 - probability
+    )
+
     response = {
         "username": username,
         "total_tweets": len(tweets),
@@ -88,7 +94,7 @@ def predict_user(
             if label
             else "non_hate_speech_spreader"
         ),
-        "probability": round(probability, 4)
+        "confidence": round(confidence, 4)
     }
 
     if explain:

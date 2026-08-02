@@ -100,6 +100,7 @@ def predict_user(
     if explain:
         explanation = ranker.rank_tweets(
         tweets=tweets,
+        predicted_label=label,
         top_k=5
     )
 

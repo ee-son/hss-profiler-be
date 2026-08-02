@@ -30,7 +30,7 @@ class TweetRanker:
 
         return float(tf.sigmoid(logit).numpy())
 
-    def rank_tweets(self, tweets, top_k=5):
+    def rank_tweets(self, tweets, predicted_label, top_k=5):
         """
         Leave-One-Out Tweet Ranking.
 
@@ -45,10 +45,7 @@ class TweetRanker:
         }
         """
 
-        # ==========================
         # Bersihkan tweet kosong
-        # ==========================
-
         cleaned_tweets = []
 
         for tweet in tweets:
@@ -67,14 +64,11 @@ class TweetRanker:
 
         if not cleaned_tweets:
             return {
-                "baseline_probability": 0.0,
+                "baseline_confidence": 0.0,
                 "top_tweets": []
             }
 
-        # ==========================
         # Baseline Prediction
-        # ==========================
-
         baseline_document = self.preprocess(
             tweets=cleaned_tweets,
             language=self.language
@@ -83,6 +77,11 @@ class TweetRanker:
         baseline_probability = self._predict_probability(
             baseline_document
         )
+
+        if predicted_label == 1:
+            baseline_confidence = baseline_probability
+        else:
+            baseline_confidence = 1 - baseline_probability
 
         # ==========================
         # Build Leave-One-Out Documents
@@ -104,10 +103,8 @@ class TweetRanker:
 
             documents.append(author_document)
 
-        # ==========================
-        # Batch Prediction
-        # ==========================
 
+        # Batch Prediction
         inputs = tf.constant(
             [[doc] for doc in documents],
             dtype=tf.string
@@ -122,10 +119,8 @@ class TweetRanker:
             logits
         ).numpy().flatten()
 
-        # ==========================
-        # Calculate Contribution
-        # ==========================
 
+        # Calculate Contribution
         results = []
 
         for tweet, prob in zip(cleaned_tweets, probabilities):
@@ -135,11 +130,19 @@ class TweetRanker:
             else:
                 tweet_text = tweet
 
-            contribution = baseline_probability - float(prob)
+            if predicted_label == 1:
+                confidence_without = float(prob)
+            else:
+                confidence_without = 1 - float(prob)
+
+            contribution = (
+                baseline_confidence -
+                confidence_without
+            )
 
             results.append({
                 "tweet": tweet_text,
-                "probability_without": round(float(prob), 4),
+                "confidence_without": round(confidence_without, 4),
                 "contribution": round(contribution, 4)
             })
 
@@ -150,8 +153,8 @@ class TweetRanker:
         )
 
         return {
-            "baseline_probability": round(
-                baseline_probability,
+            "baseline_confidence": round(
+                baseline_confidence,
                 4
             ),
             "top_tweets": results[:top_k]

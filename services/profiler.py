@@ -41,10 +41,8 @@ async def profile_user(
             "Twitter is temporarily rate limited. Please try again in a few minutes."
         )
 
-    except RateLimitError:
-        raise RuntimeError(
-            "Twitter rate limit exceeded. Please try again later."
-        )
+    except RateLimitError as e:
+        raise RuntimeError(str(e))
 
     result = predict_user(
         username=username,

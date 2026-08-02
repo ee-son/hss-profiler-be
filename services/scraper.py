@@ -103,28 +103,43 @@ class TwitterScraper:
         validation_tweets = []
         language_validated = False
 
+        # Debug counters
+        total_api = 0
+        skipped_retweet = 0
+        skipped_empty = 0
+        skipped_not_meaningful = 0
+        skipped_language = 0
+        accepted = 0
+        skipped_other_user = 0
+        waiting_validation = 0
+
         print(f"[SCRAPE] Query: {username}")
 
         user = await self.api.user_by_login(username)
 
         try:
-            async for tweet in self.api.user_tweets(user.id, limit=max_tweets * 2):
+            async for tweet in self.api.user_tweets(
+                user.id,
+                limit=max_tweets * 2
+            ):
 
-                if tweet.user.username.lower() != username.lower():
-                    continue
+                total_api += 1
 
                 is_retweet = tweet.retweetedTweet is not None
                 is_quoted = tweet.quotedTweet is not None
 
                 if is_retweet and not is_quoted:
+                    skipped_retweet += 1
                     continue
 
                 text = tweet.rawContent.strip()
 
                 if not text:
+                    skipped_empty += 1
                     continue
 
                 if not self._has_meaningful_text(text):
+                    skipped_not_meaningful += 1
                     continue
 
                 tweet_info = {
@@ -135,10 +150,13 @@ class TwitterScraper:
                     "is_quoted": is_quoted,
                 }
 
+                # Language validation
                 if not language_validated:
+
                     validation_tweets.append(tweet_info)
 
                     if len(validation_tweets) < 30:
+                        waiting_validation += 1
                         continue
 
                     detected_language = detect_dominant_language(
@@ -150,8 +168,6 @@ class TwitterScraper:
 
                     language_validated = True
 
-                    # Setelah lolos validasi,
-                    # proses kembali 20 tweet yang sudah dibuffer
                     for buffered in validation_tweets:
 
                         keep, detected_lang = self._should_keep_tweet(
@@ -160,10 +176,12 @@ class TwitterScraper:
                         )
 
                         if not keep:
+                            skipped_language += 1
                             continue
 
                         buffered["language_detected"] = detected_lang
                         tweets_data.append(buffered)
+                        accepted += 1
 
                     validation_tweets.clear()
 
@@ -172,31 +190,50 @@ class TwitterScraper:
 
                     continue
 
+                # ==========================
+                # Normal filtering
+                # ==========================
+
                 keep, detected_lang = self._should_keep_tweet(
                     text,
                     language
                 )
 
                 if not keep:
+                    skipped_language += 1
                     continue
 
                 tweet_info["language_detected"] = detected_lang
                 tweets_data.append(tweet_info)
+                accepted += 1
 
                 print(text[:80])
 
                 if len(tweets_data) >= max_tweets:
                     break
 
-                
         except NoAccountError:
-            retry_at = await self.api.pool.next_available_at("UserTweets")
+            retry_at = await self.api.pool.next_available_at(
+                "UserTweets"
+            )
 
             print("=" * 50)
             print("Retry at:", retry_at)
             print("=" * 50)
 
             raise RateLimitError(retry_at)
+
+        print("\n" + "=" * 50)
+        print("SCRAPE SUMMARY")
+        print("=" * 50)
+        print(f"Total from API         : {total_api}")
+        print(f"Skipped retweet        : {skipped_retweet}")
+        print(f"Skipped empty          : {skipped_empty}")
+        print(f"Skipped not meaningful : {skipped_not_meaningful}")
+        print(f"Skipped language       : {skipped_language}")
+        print(f"Waiting validation     : {waiting_validation}")
+        print(f"Accepted               : {accepted}")
+        print("=" * 50 + "\n")
 
         if len(tweets_data) < MIN_TWEETS:
             return []

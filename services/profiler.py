@@ -21,7 +21,7 @@ async def profile_user(
 
     existing_language = get_existing_language(username)
 
-    if existing_language is not None:
+    if existing_language is not None and existing_language != language:
         raise WrongLanguageError(existing_language)
     
     scraper = TwitterScraper()

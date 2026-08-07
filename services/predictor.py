@@ -104,7 +104,6 @@ def predict_user(
         top_k=5
     )
 
-        explanation["method"] = "Leave-One-Out"
         response["explanation"] = explanation
 
     return response

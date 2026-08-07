@@ -60,6 +60,7 @@ def get_profile(
     )
 
     if datetime.utcnow() - created_at > timedelta(hours=ttl_hours):
+        delete_profile(username, language)
         return None
 
     return json.loads(
@@ -113,3 +114,21 @@ def get_existing_language(username: str):
         return None
 
     return row["language"]
+
+def delete_profile(
+    username: str,
+    language: str
+):
+    conn = get_connection()
+
+    conn.execute("""
+        DELETE FROM profile_cache
+        WHERE username = ?
+        AND language = ?
+    """, (
+        username,
+        language
+    ))
+
+    conn.commit()
+    conn.close()

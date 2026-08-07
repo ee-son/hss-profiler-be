@@ -3,12 +3,6 @@ import tensorflow as tf
 
 class TweetRanker:
     def __init__(self, model, preprocess_func, language="id"):
-        """
-        Args:
-            model: Trained Keras model.
-            preprocess_func: preprocess_tweets().
-            language: "id", "en", atau "es".
-        """
         self.model = model
         self.preprocess = preprocess_func
         self.language = language
@@ -31,19 +25,6 @@ class TweetRanker:
         return float(tf.sigmoid(logit).numpy())
 
     def rank_tweets(self, tweets, predicted_label, top_k=5):
-        """
-        Leave-One-Out Tweet Ranking.
-
-        Args:
-            tweets: list[str] atau list[dict]
-            top_k: jumlah tweet yang dikembalikan
-
-        Returns:
-        {
-            "baseline_probability": float,
-            "top_tweets": [...]
-        }
-        """
 
         # Bersihkan tweet kosong
         cleaned_tweets = []

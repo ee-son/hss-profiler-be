@@ -19,7 +19,7 @@ def require_admin():
 
     return None
 
-
+# Route get all profiles
 @admin_bp.route("/api/admin/profiles", methods=["GET"])
 def admin_profiles():
     auth_error = require_admin()
@@ -41,7 +41,7 @@ def admin_profiles():
             "error": "Internal server error."
         }), 500
 
-
+# Route update profile
 @admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["POST"])
 def update_profile(username, language):
     auth_error = require_admin()
@@ -57,22 +57,18 @@ def update_profile(username, language):
     try:
         result = asyncio.run(
             profile_user(
-                username,
-                language,
-                False
+                username=username,
+                language=language,
+                explain=False,
+                force_refresh=True
             )
-        )
-
-        save_profile(
-            username,
-            language,
-            result
         )
 
         return jsonify({
             "message": "Profile updated successfully.",
             "username": username,
             "language": language,
+            "last_updated": result.get("last_updated"),
             "result": result
         })
 
@@ -93,10 +89,8 @@ def update_profile(username, language):
             "error": "Internal server error."
         }), 500
 
-@admin_bp.route(
-    "/api/admin/profiles/<username>/<language>",
-    methods=["DELETE"]
-)
+# Route delete profile
+@admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["DELETE"])
 def delete_admin_profile(username, language):
     auth_error = require_admin()
 

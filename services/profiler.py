@@ -2,13 +2,14 @@ import asyncio
 from services.scraper import TwitterScraper
 from services.rate_limit import RateLimitError
 from services.predictor import predict_user
-from services.cache import get_profile, save_profile, get_existing_language
+from services.cache import get_profile, save_profile, get_existing_language, get_profile_updated_at
 from services.lang_detector import WrongLanguageError
 
 async def profile_user(
     username: str,
     language: str,
-    explain: bool = False
+    explain: bool = False,
+    force_refresh: bool = False
 ):
     cached = get_profile(
         username=username,
@@ -17,6 +18,14 @@ async def profile_user(
 
     if cached:
         print(f"[CACHE] Using cached profile: {username}")
+
+        last_updated = get_profile_updated_at(
+            username=username,
+            language=language
+        )
+
+        cached["last_updated"] = last_updated
+
         return cached
 
     existing_language = get_existing_language(username)
@@ -56,5 +65,12 @@ async def profile_user(
         language=language,
         result=result
     )
+
+    last_updated = get_profile_updated_at(
+        username=username,
+        language=language
+    )
+
+    result["last_updated"] = last_updated
 
     return result

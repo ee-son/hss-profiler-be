@@ -65,7 +65,7 @@ def get_all_profiles():
         SELECT
             username,
             language,
-            created_at
+            created_at AS last_updated
         FROM profile_cache
         ORDER BY created_at DESC
     """).fetchall()
@@ -122,6 +122,29 @@ def get_existing_language(username: str):
 
     return row["language"]
 
+def get_profile_updated_at(
+    username: str,
+    language: str
+):
+    conn = get_connection()
+
+    row = conn.execute("""
+        SELECT created_at
+        FROM profile_cache
+        WHERE username = ?
+        AND language = ?
+    """, (
+        username,
+        language
+    )).fetchone()
+
+    conn.close()
+
+    if row is None:
+        return None
+
+    return row["created_at"]
+
 def delete_profile(
     username: str,
     language: str
@@ -139,4 +162,3 @@ def delete_profile(
 
     conn.commit()
     conn.close()
-    

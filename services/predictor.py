@@ -1,9 +1,6 @@
 import tensorflow as tf
 
-from services.preprocess import (
-    preprocess_tweets,
-    custom_standardization,
-)
+from services.preprocess import preprocess_tweets, custom_standardization
 
 from services.ranker import TweetRanker
 
@@ -90,7 +87,7 @@ def predict_user(
             if label
             else "non_hate_speech_spreader"
         ),
-        "confidence": round(confidence, 4)
+        "confidence": round(confidence, 4),
     }
 
     if explain:

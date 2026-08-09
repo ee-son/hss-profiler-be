@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 DB_DIR = Path("database")
@@ -36,7 +36,6 @@ def init_db():
 def get_profile(
     username: str,
     language: str,
-    ttl_hours: int = 72
 ):
     conn = get_connection()
 
@@ -55,17 +54,25 @@ def get_profile(
     if row is None:
         return None
 
-    created_at = datetime.fromisoformat(
-        row["created_at"]
-    )
-
-    if datetime.utcnow() - created_at > timedelta(hours=ttl_hours):
-        delete_profile(username, language)
-        return None
-
     return json.loads(
         row["result_json"]
     )
+
+def get_all_profiles():
+    conn = get_connection()
+
+    rows = conn.execute("""
+        SELECT
+            username,
+            language,
+            created_at
+        FROM profile_cache
+        ORDER BY created_at DESC
+    """).fetchall()
+
+    conn.close()
+
+    return [dict(row) for row in rows]
 
 
 def save_profile(
@@ -132,3 +139,4 @@ def delete_profile(
 
     conn.commit()
     conn.close()
+    

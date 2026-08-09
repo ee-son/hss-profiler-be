@@ -1,7 +1,6 @@
 import asyncio
 from flask import Blueprint, jsonify, request
 from services.profiler import profile_user
-
 from services.lang_detector import WrongLanguageError
 
 profile_bp = Blueprint("profile", __name__)
@@ -57,3 +56,4 @@ def profile():
         return jsonify({
             "error": "Internal server error."
         }), 500
+    

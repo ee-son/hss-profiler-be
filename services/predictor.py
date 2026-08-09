@@ -21,18 +21,6 @@ ID_MODEL = tf.keras.models.load_model(
     }
 )
 
-GENERAL_RANKER = TweetRanker(
-    model=GENERAL_MODEL,
-    preprocess_func=preprocess_tweets,
-    language="en"
-)
-
-ID_RANKER = TweetRanker(
-    model=ID_MODEL,
-    preprocess_func=preprocess_tweets,
-    language="id"
-)
-
 def predict_user(
     username: str,
     tweets: list,
@@ -42,10 +30,18 @@ def predict_user(
 
     if language == "id":
         model = ID_MODEL
-        ranker = ID_RANKER
-    else:
+    elif language in ("en", "es"):
         model = GENERAL_MODEL
-        ranker = GENERAL_RANKER
+    else:
+        raise ValueError(
+            f"Unsupported language: {language}"
+        )
+
+    ranker = TweetRanker(
+        model=model,
+        preprocess_func=preprocess_tweets,
+        language=language
+    )
 
     print("=" * 50)
     print("Jumlah tweet:", len(tweets))

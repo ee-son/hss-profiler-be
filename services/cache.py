@@ -36,7 +36,7 @@ def init_db():
 def get_profile(
     username: str,
     language: str,
-    ttl_hours: int = 24
+    ttl_hours: int = 72
 ):
     conn = get_connection()
 

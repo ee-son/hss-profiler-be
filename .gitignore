@@ -5,3 +5,4 @@ config/cookies*
 accounts.db
 .vscode/
 database/
+.env

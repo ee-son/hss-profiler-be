@@ -16,7 +16,7 @@ async def profile_user(
         language=language
     )
 
-    if cached:
+    if cached and not force_refresh:
         print(f"[CACHE] Using cached profile: {username}")
 
         last_updated = get_profile_updated_at(

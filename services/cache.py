@@ -67,7 +67,7 @@ def get_all_profiles():
             language,
             created_at AS last_updated
         FROM profile_cache
-        ORDER BY created_at DESC
+        ORDER BY username DESC
     """).fetchall()
 
     conn.close()

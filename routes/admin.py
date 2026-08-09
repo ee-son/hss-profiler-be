@@ -59,7 +59,7 @@ def update_profile(username, language):
             profile_user(
                 username=username,
                 language=language,
-                explain=False,
+                explain=True,
                 force_refresh=True
             )
         )

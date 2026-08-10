@@ -3,7 +3,7 @@ import asyncio
 from flask import Blueprint, jsonify, request
 
 from services.profiler import profile_user
-from services.cache import get_all_profiles, save_profile, delete_profile
+from services.cache import get_profile, get_all_profiles, delete_profile
 from services.lang_detector import WrongLanguageError
 from services.auth import check_admin_key
 
@@ -40,6 +40,31 @@ def admin_profiles():
         return jsonify({
             "error": "Internal server error."
         }), 500
+
+# Get one profile
+@admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["GET"])
+def view_profile(username, language):
+    auth_error = require_admin()
+
+    if auth_error:
+        return auth_error
+
+    if language not in ["id", "en", "es"]:
+        return jsonify({
+            "error": "Language must be one of: id, en, es."
+        }), 400
+
+    profile = get_profile(
+        username=username,
+        language=language
+    )
+
+    if profile is None:
+        return jsonify({
+            "error": "Profile not found."
+        }), 404
+
+    return jsonify(profile)
 
 # Route update profile
 @admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["POST"])

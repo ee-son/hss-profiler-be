@@ -6,3 +6,4 @@ accounts.db
 .vscode/
 database/
 .env
+models/

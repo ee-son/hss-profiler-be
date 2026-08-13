@@ -102,33 +102,27 @@ class TwitterScraper:
         tweets_data = []
         validation_tweets = []
         language_validated = False
+        total_api = skipped_retweet = skipped_empty = 0
+        skipped_not_meaningful = skipped_language = 0
+        skipped_other_user = accepted = waiting_validation = 0
 
-        # Debug counters
-        total_api = 0
-        skipped_retweet = 0
-        skipped_empty = 0
-        skipped_not_meaningful = 0
-        skipped_language = 0
-        accepted = 0
-        skipped_other_user = 0
-        waiting_validation = 0
-
-        print(f"[SCRAPE] Query: {username}")
-
+        print(f"[SCRAPE] Query: from:{username}")
         user = await self.api.user_by_login(username)
 
         try:
-            async for tweet in self.api.user_tweets(
-                user.id,
-                limit=max_tweets * 2
-            ):
+            query = f"from:{username}"
 
+            async for tweet in self.api.search(query):
                 total_api += 1
+
+                if tweet.user.id != user.id:
+                    skipped_other_user += 1
+                    continue
 
                 is_retweet = tweet.retweetedTweet is not None
                 is_quoted = tweet.quotedTweet is not None
 
-                if is_retweet and not is_quoted:
+                if is_retweet:
                     skipped_retweet += 1
                     continue
 
@@ -150,18 +144,14 @@ class TwitterScraper:
                     "is_quoted": is_quoted,
                 }
 
-                # Language validation
                 if not language_validated:
-
                     validation_tweets.append(tweet_info)
 
                     if len(validation_tweets) < 30:
                         waiting_validation += 1
                         continue
 
-                    detected_language = detect_dominant_language(
-                        validation_tweets
-                    )
+                    detected_language = detect_dominant_language(validation_tweets)
 
                     if detected_language != language:
                         raise WrongLanguageError(detected_language)
@@ -169,12 +159,9 @@ class TwitterScraper:
                     language_validated = True
 
                     for buffered in validation_tweets:
-
                         keep, detected_lang = self._should_keep_tweet(
-                            buffered["text"],
-                            language
+                            buffered["text"], language
                         )
-
                         if not keep:
                             skipped_language += 1
                             continue
@@ -187,17 +174,9 @@ class TwitterScraper:
 
                     if len(tweets_data) >= max_tweets:
                         break
-
                     continue
 
-                # ==========================
-                # Normal filtering
-                # ==========================
-
-                keep, detected_lang = self._should_keep_tweet(
-                    text,
-                    language
-                )
+                keep, detected_lang = self._should_keep_tweet(text, language)
 
                 if not keep:
                     skipped_language += 1
@@ -213,20 +192,17 @@ class TwitterScraper:
                     break
 
         except NoAccountError:
-            retry_at = await self.api.pool.next_available_at(
-                "UserTweets"
-            )
-
+            retry_at = await self.api.pool.next_available_at("Search")
             print("=" * 50)
             print("Retry at:", retry_at)
             print("=" * 50)
-
             raise RateLimitError(retry_at)
 
         print("\n" + "=" * 50)
         print("SCRAPE SUMMARY")
         print("=" * 50)
         print(f"Total from API         : {total_api}")
+        print(f"Skipped other user     : {skipped_other_user}")
         print(f"Skipped retweet        : {skipped_retweet}")
         print(f"Skipped empty          : {skipped_empty}")
         print(f"Skipped not meaningful : {skipped_not_meaningful}")
@@ -235,8 +211,5 @@ class TwitterScraper:
         print(f"Accepted               : {accepted}")
         print("=" * 50 + "\n")
 
-        if len(tweets_data) < MIN_TWEETS:
-            return []
-
         return tweets_data
-    
+        

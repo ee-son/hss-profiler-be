@@ -53,6 +53,15 @@ async def profile_user(
     except RateLimitError as e:
         raise RuntimeError(str(e))
 
+    if len(tweets) < 50:
+        print(f"[PROFILE] Insufficient tweets: {len(tweets)}/50")
+        return {
+            "success": False,
+            "qualified": False,
+            "message": f"Tweet tidak mencukupi: {len(tweets)}/50",
+            "tweet_count": len(tweets)
+        }
+
     result = predict_user(
         username=username,
         tweets=tweets,

@@ -88,6 +88,7 @@ def predict_user(
             else "non_hate_speech_spreader"
         ),
         "confidence": round(confidence, 4),
+        "qualified": True,
     }
 
     if explain:

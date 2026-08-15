@@ -78,21 +78,110 @@ def get_profile(
     return result
 
 # Get all profiles
-def get_all_profiles():
+def get_all_profiles(
+    page=1,
+    per_page=20,
+    search="",
+    sort_by="last_updated",
+    sort_order="desc"
+):
     conn = get_connection()
 
-    rows = conn.execute("""
-        SELECT
-            username,
-            language,
-            created_at AS last_updated
-        FROM profile_cache
-        ORDER BY username DESC
-    """).fetchall()
+    allowed_sort_columns = {
+        "username": "username",
+        "language": """
+            CASE language
+                WHEN 'en' THEN 1
+                WHEN 'id' THEN 2
+                WHEN 'es' THEN 3
+                ELSE 99
+            END
+        """,
+        "last_updated": "created_at",
+    }
+
+    sort_column = allowed_sort_columns.get(
+        sort_by,
+        "created_at"
+    )
+
+    sort_direction = (
+        "ASC"
+        if sort_order.lower() == "asc"
+        else "DESC"
+    )
+
+    offset = (page - 1) * per_page
+
+    search = search.strip()
+
+    if search:
+        search_pattern = f"%{search}%"
+
+        rows = conn.execute(
+            f"""
+            SELECT
+                username,
+                language,
+                created_at AS last_updated
+            FROM profile_cache
+            WHERE username LIKE ?
+            ORDER BY {sort_column} {sort_direction}
+            LIMIT ? OFFSET ?
+            """,
+            (
+                search_pattern,
+                per_page,
+                offset
+            )
+        ).fetchall()
+
+        total = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM profile_cache
+            WHERE username LIKE ?
+            """,
+            (search_pattern,)
+        ).fetchone()[0]
+
+    else:
+        rows = conn.execute(
+            f"""
+            SELECT
+                username,
+                language,
+                created_at AS last_updated
+            FROM profile_cache
+            ORDER BY {sort_column} {sort_direction}
+            LIMIT ? OFFSET ?
+            """,
+            (
+                per_page,
+                offset
+            )
+        ).fetchall()
+
+        total = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM profile_cache
+            """
+        ).fetchone()[0]
 
     conn.close()
 
-    return [dict(row) for row in rows]
+    return {
+        "profiles": [dict(row) for row in rows],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (
+                (total + per_page - 1) // per_page
+            )
+        }
+    }
 
 # Save profile
 def save_profile(

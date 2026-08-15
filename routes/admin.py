@@ -28,11 +28,69 @@ def admin_profiles():
         return auth_error
 
     try:
-        profiles = get_all_profiles()
+        page = request.args.get(
+            "page",
+            default=1,
+            type=int
+        )
 
-        return jsonify({
-            "profiles": profiles
-        })
+        per_page = request.args.get(
+            "per_page",
+            default=20,
+            type=int
+        )
+
+        search = request.args.get(
+            "search",
+            default=""
+        ).strip()
+
+        sort_by = request.args.get(
+            "sort_by",
+            default="last_updated"
+        )
+
+        sort_order = request.args.get(
+            "sort_order",
+            default="desc"
+        )
+
+        if page < 1:
+            return jsonify({
+                "error": "Page must be greater than 0."
+            }), 400
+
+        if per_page < 1 or per_page > 100:
+            return jsonify({
+                "error": "per_page must be between 1 and 100."
+            }), 400
+
+        if sort_by not in {
+            "username",
+            "language",
+            "last_updated"
+        }:
+            return jsonify({
+                "error": "Invalid sort field."
+            }), 400
+
+        if sort_order not in {
+            "asc",
+            "desc"
+        }:
+            return jsonify({
+                "error": "Invalid sort order."
+            }), 400
+
+        result = get_all_profiles(
+            page=page,
+            per_page=per_page,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order
+        )
+
+        return jsonify(result)
 
     except Exception as e:
         print(e)

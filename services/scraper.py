@@ -107,7 +107,25 @@ class TwitterScraper:
         skipped_other_user = accepted = waiting_validation = 0
 
         print(f"[SCRAPE] Query: from:{username}")
-        user = await self.api.user_by_login(username)
+        try:
+            user = await self.api.user_by_login(username)
+
+        except NoAccountError as e:
+            retry_at = await self.api.pool.next_available_at(
+                "UserByScreenName"
+            )
+
+            print("=" * 50)
+            print("NO ACCOUNT AVAILABLE")
+            print("Endpoint: UserByScreenName")
+            print("Error:", repr(e))
+            print("Retry at:", retry_at)
+            print("=" * 50)
+
+            raise RateLimitError(
+                retry_at=retry_at,
+                endpoint="UserByScreenName"
+            )
 
         try:
             query = f"from:{username}"
@@ -191,12 +209,22 @@ class TwitterScraper:
                 if len(tweets_data) >= max_tweets:
                     break
 
-        except NoAccountError:
-            retry_at = await self.api.pool.next_available_at("Search")
+        except NoAccountError as e:
+            retry_at = await self.api.pool.next_available_at(
+                "SearchTimeline"
+            )
+
             print("=" * 50)
+            print("NO ACCOUNT AVAILABLE")
+            print("Endpoint: SearchTimeline")
+            print("Error:", repr(e))
             print("Retry at:", retry_at)
             print("=" * 50)
-            raise RateLimitError(retry_at)
+
+            raise RateLimitError(
+                retry_at=retry_at,
+                endpoint="SearchTimeline"
+            )
 
         print("\n" + "=" * 50)
         print("SCRAPE SUMMARY")

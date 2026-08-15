@@ -48,7 +48,7 @@ def get_profile(
     row = conn.execute("""
         SELECT result_json, created_at
         FROM profile_cache
-        WHERE username = ?
+        WHERE LOWER(username) = LOWER(?)
         AND language = ?
     """, (
         username,
@@ -225,7 +225,7 @@ def get_existing_language(username: str):
     row = conn.execute("""
         SELECT language
         FROM profile_cache
-        WHERE username = ?
+        WHERE LOWER(username) = LOWER(?)
         LIMIT 1
     """, (username,)).fetchone()
 
@@ -246,7 +246,7 @@ def get_profile_updated_at(
     row = conn.execute("""
         SELECT created_at
         FROM profile_cache
-        WHERE username = ?
+        WHERE LOWER(username) = LOWER(?)
         AND language = ?
     """, (
         username,
@@ -269,7 +269,7 @@ def delete_profile(
 
     conn.execute("""
         DELETE FROM profile_cache
-        WHERE username = ?
+        WHERE LOWER(username) = LOWER(?)
         AND language = ?
     """, (
         username,

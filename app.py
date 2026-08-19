@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from flasgger import Swagger
 from dotenv import load_dotenv
 
 from services.cache import init_db
@@ -13,6 +14,8 @@ app = Flask(__name__)
 CORS(app)
 
 init_db()
+
+swagger = Swagger(app)
 
 app.register_blueprint(profile_bp)
 app.register_blueprint(admin_bp)

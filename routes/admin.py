@@ -22,6 +22,112 @@ def require_admin():
 # Route get all profiles
 @admin_bp.route("/api/admin/profiles", methods=["GET"])
 def admin_profiles():
+    """
+    Get all profiles.
+
+    ---
+    tags:
+      - Admin - Profiles
+
+    security:
+      - AdminKey: []
+
+    parameters:
+      - name: page
+        in: query
+        type: integer
+        required: false
+        default: 1
+        minimum: 1
+        description: Page number.
+
+      - name: per_page
+        in: query
+        type: integer
+        required: false
+        default: 20
+        minimum: 1
+        maximum: 100
+        description: Number of profiles per page.
+
+      - name: search
+        in: query
+        type: string
+        required: false
+        default: ""
+        description: Search profiles by username.
+
+      - name: sort_by
+        in: query
+        type: string
+        required: false
+        default: last_updated
+        enum:
+          - username
+          - language
+          - last_updated
+        description: Field used for sorting.
+
+      - name: sort_order
+        in: query
+        type: string
+        required: false
+        default: desc
+        enum:
+          - asc
+          - desc
+        description: Sort direction.
+
+    responses:
+      200:
+        description: Profiles retrieved successfully.
+        schema:
+          type: object
+          example:
+            page: 1
+            per_page: 20
+            total: 42
+            total_pages: 3
+            profiles:
+              - username: "example_user"
+                language: "id"
+                last_updated: "2026-08-19T12:00:00Z"
+
+      400:
+        description: Invalid query parameters.
+        schema:
+          type: object
+          properties:
+            error:
+              type: string
+          examples:
+            invalid_page:
+              value:
+                error: "Page must be greater than 0."
+            invalid_per_page:
+              value:
+                error: "per_page must be between 1 and 100."
+            invalid_sort_field:
+              value:
+                error: "Invalid sort field."
+            invalid_sort_order:
+              value:
+                error: "Invalid sort order."
+
+      401:
+        description: Unauthorized. Invalid or missing admin API key.
+        schema:
+          type: object
+          example:
+            error: "Unauthorized."
+
+      500:
+        description: Internal server error.
+        schema:
+          type: object
+          example:
+            error: "Internal server error."
+    """
     auth_error = require_admin()
 
     if auth_error:
@@ -102,6 +208,68 @@ def admin_profiles():
 # Get one profile
 @admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["GET"])
 def view_profile(username, language):
+    """
+    Get a single user profile.
+
+    ---
+    tags:
+      - Admin - Profiles
+
+    security:
+      - AdminKey: []
+
+    parameters:
+      - name: username
+        in: path
+        type: string
+        required: true
+        description: Username of the profile.
+        example: example_user
+
+      - name: language
+        in: path
+        type: string
+        required: true
+        enum:
+          - id
+          - en
+          - es
+        description: Profile language.
+        example: id
+
+    responses:
+      200:
+        description: Profile retrieved successfully.
+        schema:
+          type: object
+          example:
+            username: "example_user"
+            language: "id"
+            last_updated: "2026-08-19T12:00:00Z"
+            score: 0.75
+            label: "hate_speech_spreader"
+
+      400:
+        description: Invalid language.
+        schema:
+          type: object
+          example:
+            error: "Language must be one of: id, en, es."
+
+      401:
+        description: Unauthorized. Invalid or missing admin API key.
+        schema:
+          type: object
+          example:
+            error: "Unauthorized."
+
+      404:
+        description: Profile not found.
+        schema:
+          type: object
+          example:
+            error: "Profile not found."
+    """
     auth_error = require_admin()
 
     if auth_error:
@@ -127,6 +295,79 @@ def view_profile(username, language):
 # Route update profile
 @admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["POST"])
 def update_profile(username, language):
+    """
+    Force refresh and update a user profile.
+
+    ---
+    tags:
+      - Admin - Profiles
+
+    security:
+      - AdminKey: []
+
+    parameters:
+      - name: username
+        in: path
+        type: string
+        required: true
+        description: Username of the profile to update.
+        example: example_user
+
+      - name: language
+        in: path
+        type: string
+        required: true
+        enum:
+          - id
+          - en
+          - es
+        description: Profile language.
+        example: id
+
+    responses:
+      200:
+        description: Profile updated successfully.
+        schema:
+          type: object
+          example:
+            message: "Profile updated successfully."
+            username: "example_user"
+            language: "id"
+            last_updated: "2026-08-19T12:00:00Z"
+            result:
+              username: "example_user"
+              language: "id"
+              score: 0.75
+              label: "hate_speech_spreader"
+
+      400:
+        description: Invalid language.
+        schema:
+          type: object
+          example:
+            error: "Language must be one of: id, en, es."
+
+      401:
+        description: Unauthorized. Invalid or missing admin API key.
+        schema:
+          type: object
+          example:
+            error: "Unauthorized."
+
+      429:
+        description: Rate limit or service limit exceeded.
+        schema:
+          type: object
+          example:
+            error: "Rate limit exceeded."
+
+      500:
+        description: Internal server error.
+        schema:
+          type: object
+          example:
+            error: "Internal server error."
+    """
     auth_error = require_admin()
 
     if auth_error:
@@ -175,6 +416,66 @@ def update_profile(username, language):
 # Route delete profile
 @admin_bp.route("/api/admin/profiles/<username>/<language>", methods=["DELETE"])
 def delete_admin_profile(username, language):
+    """
+    Delete a user profile.
+
+    ---
+    tags:
+      - Admin - Profiles
+
+    security:
+      - AdminKey: []
+
+    parameters:
+      - name: username
+        in: path
+        type: string
+        required: true
+        description: Username of the profile to delete.
+        example: example_user
+
+      - name: language
+        in: path
+        type: string
+        required: true
+        enum:
+          - id
+          - en
+          - es
+        description: Profile language.
+        example: id
+
+    responses:
+      200:
+        description: Profile deleted successfully.
+        schema:
+          type: object
+          example:
+            message: "Profile deleted successfully."
+            username: "example_user"
+            language: "id"
+
+      400:
+        description: Invalid language.
+        schema:
+          type: object
+          example:
+            error: "Language must be one of: id, en, es."
+
+      401:
+        description: Unauthorized. Invalid or missing admin API key.
+        schema:
+          type: object
+          example:
+            error: "Unauthorized."
+
+      500:
+        description: Internal server error.
+        schema:
+          type: object
+          example:
+            error: "Internal server error."
+    """
     auth_error = require_admin()
 
     if auth_error:

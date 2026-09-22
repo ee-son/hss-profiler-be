@@ -1,7 +1,5 @@
 import tensorflow as tf
-
 from services.preprocess import preprocess_tweets, custom_standardization
-
 from services.ranker import TweetRanker
 
 GENERAL_MODEL = tf.keras.models.load_model(
@@ -65,13 +63,10 @@ def predict_user(
     )
 
     logit = float(output[0][0])
-
     probability = float(
         tf.sigmoid(logit).numpy()
     )
-
     label = int(logit > 0)
-
     confidence = (
         probability
         if label == 1

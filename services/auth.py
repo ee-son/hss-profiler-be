@@ -1,7 +1,6 @@
 import os
 import secrets
 
-
 def check_admin_key(api_key: str | None) -> bool:
     admin_api_key = os.getenv("ADMIN_API_KEY")
 

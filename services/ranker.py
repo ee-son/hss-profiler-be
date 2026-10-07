@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-
 class TweetRanker:
     def __init__(self, model, preprocess_func, language="id"):
         self.model = model
